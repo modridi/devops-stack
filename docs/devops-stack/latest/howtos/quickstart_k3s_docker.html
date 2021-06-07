@@ -22,12 +22,9 @@
         <span></span>
         <span></span>
       </button>
-    </div>
+    </div>    
     <div id="topbar-nav" class="navbar-menu">
       <div class="navbar-end">
-        <div class="navbar-item">
-          <input id="search-input" type="text" placeholder="Search docs">
-        </div>
         <a class="navbar-item" href="https://github.com/camptocamp/devops-stack"><i class="fa fa-github-alt"></i>&nbsp;GitHub</a>
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link" href="#">Products</a>
@@ -78,6 +75,9 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="quickstart_aks.html">AKS</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="quickstart_ocp_ipi_aws.html">OpenShift (IPI) on AWS</a>
+  </li>
   <li class="nav-item is-current-page" data-depth="3">
     <a class="nav-link" href="quickstart_k3s_docker.html">K3s on Docker</a>
   </li>
@@ -107,6 +107,9 @@
     <button class="nav-item-toggle"></button>
     <span class="nav-text">References</span>
 <ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../references/architecture.html">Architecture</a>
+  </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../references/authentication.html">Authentication</a>
   </li>
@@ -235,12 +238,6 @@
           <a href="../index.html">latest</a>
         </li>
         <li class="version">
-          <a href="../../0.32.0/index.html">0.32.0</a>
-        </li>
-        <li class="version">
-          <a href="../../0.31.0/index.html">0.31.0</a>
-        </li>
-        <li class="version">
           <a href="../../0.30.0/index.html">0.30.0</a>
         </li>
       </ul>
@@ -266,12 +263,10 @@
   <button class="version-menu-toggle" title="Show other versions of page">latest</button>
   <div class="version-menu">
     <a class="version is-current" href="quickstart_k3s_docker.html">latest</a>
-    <a class="version" href="../../0.32.0/howtos/quickstart_k3s_docker.html">0.32.0</a>
-    <a class="version" href="../../0.31.0/howtos/quickstart_k3s_docker.html">0.31.0</a>
     <a class="version" href="../../0.30.0/howtos/quickstart_k3s_docker.html">0.30.0</a>
   </div>
 </div>
-  <div class="edit-this-page"><a href="https://github.com/camptocamp/devops-stack/edit/master/docs/modules/ROOT/pages/howtos/quickstart_k3s_docker.adoc"><i class="fa fa-github-alt"></i>&nbsp;Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/modridi/devops-stack/edit/master/docs/modules/ROOT/pages/howtos/quickstart_k3s_docker.adoc"><i class="fa fa-github-alt"></i>&nbsp;Edit this Page</a></div>
   </div>
   <div class="content">
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
@@ -288,10 +283,13 @@
 <p>Access to a functional Docker Engine,</p>
 </li>
 <li>
-<p>CGroupv2 disabled (K3s does not support it for now),</p>
+<p><span class="line-through">CGroupv2 disabled (K3s does not support it for now)</span></p>
 </li>
 <li>
 <p>Knowledge of <a href="https://terraform.io">Terraform</a> basics</p>
+</li>
+<li>
+<p>Minimal Terraform version: 0.14</p>
 </li>
 </ul>
 </div>
@@ -312,6 +310,35 @@
   source = "git::https://github.com/camptocamp/devops-stack.git//modules/k3s/docker?ref=master"
 
   cluster_name = "my-cluster"
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If your docker setup doesn&#8217;t support the bridge0 like on MacOSX, you cannot access to the container IP so the computed base domain isn&#8217;t reachable.
+You can specify the published ports of the K3S master and the base domain to use your computer&#8217;s IP.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-hcl hljs" data-lang="hcl">module "cluster" {
+  source = "git::https://github.com/camptocamp/devops-stack.git//modules/k3s/docker?ref=master"
+
+  cluster_name = "my-cluster"
+  cluster_endpoint = "192-168-1-118.nip.io"
+  base_domain      = "192-168-1-118.nip.io"
+  server_ports = [
+    {
+      internal = 6443
+      external = 6443
+    },
+    {
+      internal = 80
+      external = 80
+    },
+    {
+      internal = 443
+      external = 443
+    },
+  ]
 }</code></pre>
 </div>
 </div>
@@ -470,9 +497,6 @@ and login details in Keycloak.
   window.antora.pagePath = '/devops-stack/latest/howtos/quickstart_k3s_docker.html'
 </script>
 <script src="../../../_/js/site.js"></script>
-<script src="../../../_/js/vendor/lunr.js"></script>
-<script src="../../../_/js/vendor/search.js"></script>
-<script async src="../../../_/js/vendor/search-index.js"></script>
 <script async src="../../../_/js/vendor/terraform.js"></script>
 <script async src="../../../_/js/vendor/highlight.js"></script>
   </body>

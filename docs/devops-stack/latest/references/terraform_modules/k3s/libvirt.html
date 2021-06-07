@@ -22,12 +22,9 @@
         <span></span>
         <span></span>
       </button>
-    </div>
+    </div>    
     <div id="topbar-nav" class="navbar-menu">
       <div class="navbar-end">
-        <div class="navbar-item">
-          <input id="search-input" type="text" placeholder="Search docs">
-        </div>
         <a class="navbar-item" href="https://github.com/camptocamp/devops-stack"><i class="fa fa-github-alt"></i>&nbsp;GitHub</a>
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link" href="#">Products</a>
@@ -79,6 +76,9 @@
     <a class="nav-link" href="../../../howtos/quickstart_aks.html">AKS</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../howtos/quickstart_ocp_ipi_aws.html">OpenShift (IPI) on AWS</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../../howtos/quickstart_k3s_docker.html">K3s on Docker</a>
   </li>
   <li class="nav-item" data-depth="3">
@@ -107,6 +107,9 @@
     <button class="nav-item-toggle"></button>
     <span class="nav-text">References</span>
 <ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../architecture.html">Architecture</a>
+  </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../authentication.html">Authentication</a>
   </li>
@@ -235,12 +238,6 @@
           <a href="../../../index.html">latest</a>
         </li>
         <li class="version">
-          <a href="../../../../0.32.0/index.html">0.32.0</a>
-        </li>
-        <li class="version">
-          <a href="../../../../0.31.0/index.html">0.31.0</a>
-        </li>
-        <li class="version">
           <a href="../../../../0.30.0/index.html">0.30.0</a>
         </li>
       </ul>
@@ -266,12 +263,10 @@
   <button class="version-menu-toggle" title="Show other versions of page">latest</button>
   <div class="version-menu">
     <a class="version is-current" href="libvirt.html">latest</a>
-    <a class="version" href="../../../../0.32.0/references/terraform_modules/k3s/libvirt.html">0.32.0</a>
-    <a class="version" href="../../../../0.31.0/references/terraform_modules/k3s/libvirt.html">0.31.0</a>
     <a class="version is-missing" href="../../../../0.30.0/index.html">0.30.0</a>
   </div>
 </div>
-  <div class="edit-this-page"><a href="https://github.com/camptocamp/devops-stack/edit/master/docs/modules/ROOT/pages/references/terraform_modules/k3s/libvirt.adoc"><i class="fa fa-github-alt"></i>&nbsp;Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/modridi/devops-stack/edit/master/docs/modules/ROOT/pages/references/terraform_modules/k3s/libvirt.adoc"><i class="fa fa-github-alt"></i>&nbsp;Edit this Page</a></div>
   </div>
   <div class="content">
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
@@ -810,7 +805,7 @@
 <p><a id="output_app_of_apps_values"></a> <a href="#output_app_of_apps_values">app_of_apps_values</a></p>
 </div></div></td>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>n/a</p>
+<p>App of Apps values</p>
 </div></div></td>
 </tr>
 <tr>
@@ -886,9 +881,6 @@
   window.antora.pagePath = '/devops-stack/latest/references/terraform_modules/k3s/libvirt.html'
 </script>
 <script src="../../../../../_/js/site.js"></script>
-<script src="../../../../../_/js/vendor/lunr.js"></script>
-<script src="../../../../../_/js/vendor/search.js"></script>
-<script async src="../../../../../_/js/vendor/search-index.js"></script>
 <script async src="../../../../../_/js/vendor/terraform.js"></script>
 <script async src="../../../../../_/js/vendor/highlight.js"></script>
   </body>
