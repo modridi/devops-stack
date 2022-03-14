@@ -313,6 +313,8 @@ loki-stack:
 %{ endif ~}
 
 traefik:
+  deployment:
+    kind: DaemonSet
   resources:
     limits:
       memory: 48Mi
@@ -322,3 +324,16 @@ traefik:
   service:
     annotations:
       service.beta.kubernetes.io/azure-dns-label-name: ${azure_dns_label_name}
+%{ if length(lookup(namespaces, "traefik", {})) > 0 ~}
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+%{ for k, v in lookup(namespaces, "traefik") ~}
+          - key: ${k}
+            operator: In
+            values:
+            - ${v}
+%{ endfor ~}
+%{ endif ~}

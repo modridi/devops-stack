@@ -8,7 +8,7 @@ metadata:
   name: {{ $ns | quote }}
   annotations:
     argocd.argoproj.io/sync-wave: "-99"
-    {{- if and ($annots) (ne $ns "kube-prometheus-stack") (ne $ns "aad-pod-identity") (ne $ns "csi-secrets-store-provider-azure") (ne $ns "loki-stack")}}
+    {{- if and ($annots) (ne $ns "traefik") (ne $ns "kube-prometheus-stack") (ne $ns "aad-pod-identity") (ne $ns "csi-secrets-store-provider-azure") (ne $ns "loki-stack")}}
     {{- range $k, $v := $annots }}
     {{- $list = append $list (printf "%s=%s" $k $v) }}
     {{- end }}
