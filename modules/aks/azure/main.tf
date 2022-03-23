@@ -136,8 +136,6 @@ module "argocd" {
         subscription_id                              = split("/", data.azurerm_subscription.primary.id)[2]
         resource_group_name                          = var.resource_group_name
         base_domain                                  = local.base_domain
-        cert_manager_resource_id                     = azurerm_user_assigned_identity.cert_manager.id
-        cert_manager_client_id                       = azurerm_user_assigned_identity.cert_manager.client_id
         kube_prometheus_stack_prometheus_resource_id = azurerm_user_assigned_identity.kube_prometheus_stack_prometheus.id
         kube_prometheus_stack_prometheus_client_id   = azurerm_user_assigned_identity.kube_prometheus_stack_prometheus.client_id
         azureidentities                              = local.azureidentities
