@@ -136,8 +136,6 @@ module "argocd" {
         subscription_id                              = split("/", data.azurerm_subscription.primary.id)[2]
         resource_group_name                          = var.resource_group_name
         base_domain                                  = local.base_domain
-        kube_prometheus_stack_prometheus_resource_id = azurerm_user_assigned_identity.kube_prometheus_stack_prometheus.id
-        kube_prometheus_stack_prometheus_client_id   = azurerm_user_assigned_identity.kube_prometheus_stack_prometheus.client_id
         azureidentities                              = local.azureidentities
       }
     ),
@@ -163,19 +161,6 @@ resource "azurerm_role_assignment" "virtual_machine_contributor" {
   role_definition_name = "Virtual Machine Contributor"
   principal_id         = lookup(module.cluster.kubelet_identity[0], "object_id")
 }
-
-resource "azurerm_user_assigned_identity" "kube_prometheus_stack_prometheus" {
-  resource_group_name = module.cluster.node_resource_group
-  location            = data.azurerm_resource_group.this.location
-  name                = "kube-prometheus-stack-prometheus"
-}
-
-# TODO: I'm not sure this is required
-# resource "azurerm_role_assignment" "reader" {
-#   scope                = format("%s/resourcegroups/%s", data.azurerm_subscription.primary.id, module.cluster.node_resource_group)
-#   role_definition_name = "Reader"
-#   principal_id         = azurerm_user_assigned_identity.cert_manager.principal_id
-# }
 
 data "azurerm_dns_zone" "this" {
   name                = var.base_domain
