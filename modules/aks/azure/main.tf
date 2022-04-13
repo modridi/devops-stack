@@ -8,36 +8,6 @@ locals {
   kubernetes_cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config.0.cluster_ca_certificate)
 
   kubeconfig           = data.azurerm_kubernetes_cluster.cluster.kube_admin_config_raw
-
-  azureidentities = { for v in var.azureidentities :
-    format("%s.%s", v.namespace, v.name) => {
-      name         = v.name
-      namespace    = v.namespace
-      resource_id  = azurerm_user_assigned_identity.this[format("%s.%s", v.namespace, v.name)].id
-      client_id    = azurerm_user_assigned_identity.this[format("%s.%s", v.namespace, v.name)].client_id
-      principal_id = azurerm_user_assigned_identity.this[format("%s.%s", v.namespace, v.name)].principal_id
-    }
-  }
-}
-
-provider "helm" {
-  kubernetes {
-    host                   = local.kubernetes_host
-    username               = local.kubernetes_username
-    password               = local.kubernetes_password
-    client_certificate     = local.kubernetes_client_certificate
-    client_key             = local.kubernetes_client_key
-    cluster_ca_certificate = local.kubernetes_cluster_ca_certificate
-  }
-}
-
-provider "kubernetes" {
-  host                   = local.kubernetes_host
-  username               = local.kubernetes_username
-  password               = local.kubernetes_password
-  client_certificate     = local.kubernetes_client_certificate
-  client_key             = local.kubernetes_client_key
-  cluster_ca_certificate = local.kubernetes_cluster_ca_certificate
 }
 
 data "azurerm_resource_group" "this" {
@@ -103,50 +73,6 @@ resource "azurerm_kubernetes_cluster_node_pool" "this" {
   mode                = lookup(each.value, "mode", null)
 }
 
-module "argocd" {
-  source = "../../argocd-helm"
-
-  kubeconfig              = local.kubeconfig
-  repo_url                = var.repo_url
-  target_revision         = var.target_revision
-  extra_apps              = var.extra_apps
-  extra_app_projects      = var.extra_app_projects
-  extra_application_sets  = var.extra_application_sets
-  cluster_name            = var.cluster_name
-  base_domain             = local.base_domain
-  cluster_issuer          = "letsencrypt-prod"
-  argocd_server_secretkey = var.argocd_server_secretkey
-  wait_for_app_of_apps    = var.wait_for_app_of_apps
-
-  oidc = var.oidc != null ? var.oidc : {
-    issuer_url              = format("https://login.microsoftonline.com/%s/v2.0", data.azurerm_client_config.current.tenant_id)
-    oauth_url               = format("https://login.microsoftonline.com/%s/oauth2/authorize", data.azurerm_client_config.current.tenant_id)
-    token_url               = format("https://login.microsoftonline.com/%s/oauth2/token", data.azurerm_client_config.current.tenant_id)
-    api_url                 = format("https://graph.microsoft.com/oidc/userinfo")
-    client_id               = azuread_application.oauth2_apps.0.application_id
-    client_secret           = azuread_application_password.oauth2_apps.0.value
-    oauth2_proxy_extra_args = []
-  }
-
-  repositories = var.repositories
-
-  app_of_apps_values_overrides = [
-    templatefile("${path.module}/values.tmpl.yaml",
-      {
-        subscription_id                              = split("/", data.azurerm_subscription.primary.id)[2]
-        resource_group_name                          = var.resource_group_name
-        base_domain                                  = local.base_domain
-        azureidentities                              = local.azureidentities
-      }
-    ),
-    var.app_of_apps_values_overrides,
-  ]
-
-  depends_on = [
-    module.cluster,
-  ]
-}
-
 data "azurerm_subscription" "primary" {
 }
 
@@ -169,69 +95,6 @@ data "azurerm_dns_zone" "this" {
 
 data "azurerm_client_config" "current" {}
 
-
-resource "azuread_application" "oauth2_apps" {
-  count = var.oidc == null ? 1 : 0
-
-  display_name = "oauth2-apps-${var.cluster_name}"
-
-  required_resource_access {
-    resource_app_id = "00000003-0000-0000-c000-000000000000"
-
-    resource_access {
-      id   = "e1fe6dd8-ba31-4d61-89e7-88639da4683d"
-      type = "Scope"
-    }
-  }
-
-  optional_claims {
-    access_token {
-      additional_properties = []
-      essential             = false
-      name                  = "groups"
-    }
-    id_token {
-      additional_properties = []
-      essential             = false
-      name                  = "groups"
-    }
-  }
-
-  web {
-    redirect_uris = [
-      format("https://argocd.apps.%s.%s/auth/callback", var.cluster_name, local.base_domain),
-      format("https://grafana.apps.%s.%s/login/generic_oauth", var.cluster_name, local.base_domain),
-      format("https://prometheus.apps.%s.%s/oauth2/callback", var.cluster_name, local.base_domain),
-      format("https://alertmanager.apps.%s.%s/oauth2/callback", var.cluster_name, local.base_domain),
-    ]
-
-    implicit_grant {
-      access_token_issuance_enabled = true
-      id_token_issuance_enabled     = true
-    }
-  }
-
-  app_role {
-    allowed_member_types = ["User"]
-    description          = "ArgoCD Admins"
-    display_name         = "ArgoCD Administrator"
-    enabled              = true
-    id                   = random_uuid.argocd_app_role.0.result
-    value                = "argocd-admin"
-  }
-
-  group_membership_claims = ["ApplicationGroup"]
-}
-
-resource "random_uuid" "argocd_app_role" {
-  count = var.oidc == null ? 1 : 0
-}
-
-resource "azuread_application_password" "oauth2_apps" {
-  count = var.oidc == null ? 1 : 0
-
-  application_object_id = azuread_application.oauth2_apps.0.object_id
-}
 
 data "azurerm_policy_set_definition" "restricted" {
   display_name = "Kubernetes cluster pod security restricted standards for Linux-based workloads"
@@ -264,14 +127,4 @@ resource "azurerm_policy_assignment" "baseline" {
 }
 PARAMETERS
 
-}
-
-resource "azurerm_user_assigned_identity" "this" {
-  for_each = {
-    for k, v in var.azureidentities :
-    format("%s.%s", v.namespace, v.name) => v
-  }
-  resource_group_name = module.cluster.node_resource_group
-  location            = data.azurerm_resource_group.this.location
-  name                = format("%s-%s-%s", each.value.namespace, each.value.name, var.cluster_name)
 }

@@ -21,11 +21,6 @@ output "kube_admin_config" {
   }
 }
 
-output "azureidentities" {
-  description = "Azure User Assigned Identities created"
-  value       = local.azureidentities
-}
-
 output "kubelet_identity" {
   value = module.cluster.kubelet_identity
 }
