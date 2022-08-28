@@ -43,4 +43,3 @@ module "efs" {
 
   depends_on = [module.argocd_bootstrap]
 }
-
