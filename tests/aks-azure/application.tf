@@ -1,13 +1,17 @@
-# Resource Group
-
-resource "azurerm_resource_group" "devops_stack_modules" {
-  name     = "devops-stack-modules"
-  location = "France Central"
+locals {
+  oidc = {
+    issuer_url              = format("https://login.microsoftonline.com/%s/v2.0", data.azurerm_client_config.current.tenant_id)
+    oauth_url               = format("https://login.microsoftonline.com/%s/oauth2/authorize", data.azurerm_client_config.current.tenant_id)
+    token_url               = format("https://login.microsoftonline.com/%s/oauth2/token", data.azurerm_client_config.current.tenant_id)
+    api_url                 = format("https://graph.microsoft.com/oidc/userinfo")
+    client_id               = azuread_application.application.application_id
+    client_secret           = azuread_application_password.client_secret.value
+    oauth2_proxy_extra_args = []
+  }
 }
 
-# OIDC
-resource "azuread_application" "oauth2_apps" {
-  display_name = "oauth2-apps-is-internal-dev"
+resource "azuread_application" "application" {
+  display_name = var.platform_name
 
   required_resource_access {
     resource_app_id = "00000003-0000-0000-c000-000000000000"
@@ -33,13 +37,10 @@ resource "azuread_application" "oauth2_apps" {
 
   web {
     redirect_uris = [
-      format("https://argocd.apps.blue.%s/auth/callback", azurerm_dns_zone.is_internal.name),
-      format("https://thanos-query.apps.blue.%s/oauth2/callback", azurerm_dns_zone.is_internal.name),
-      format("https://thanos-bucketweb.apps.blue.%s/oauth2/callback", azurerm_dns_zone.is_internal.name),
-      format("https://grafana.apps.blue.%s/login/generic_oauth", azurerm_dns_zone.is_internal.name),
-      format("https://prometheus.apps.blue.%s/oauth2/callback", azurerm_dns_zone.is_internal.name),
-      format("https://alertmanager.apps.blue.%s/oauth2/callback", azurerm_dns_zone.is_internal.name),
-      format("https://traefik.apps.blue.%s/_oauth", azurerm_dns_zone.is_internal.name),
+      format("https://argocd.apps.%s.%s/auth/callback", var.cluster_name, azurerm_dns_zone.default.name),
+      format("https://grafana.apps.%s.%s/login/generic_oauth", var.cluster_name, azurerm_dns_zone.default.name),
+      format("https://prometheus.apps.%s.%s/oauth2/callback", var.cluster_name, azurerm_dns_zone.default.name),
+      format("https://alertmanager.apps.%s.%s/oauth2/callback", var.cluster_name, azurerm_dns_zone.default.name),
     ]
 
     implicit_grant {
@@ -66,10 +67,6 @@ resource "azuread_application" "oauth2_apps" {
     value                = "argocd-user"
   }
 
-  owners = [
-    "e54fbd6e-cff9-4ee7-a43e-96e885572e34",
-  ]
-
   group_membership_claims = ["ApplicationGroup"]
 }
 
@@ -79,6 +76,6 @@ resource "random_uuid" "argocd_app_role_admin" {
 resource "random_uuid" "argocd_app_role_user" {
 }
 
-resource "azuread_application_password" "oauth2_apps" {
-  application_object_id = azuread_application.oauth2_apps.object_id
+resource "azuread_application_password" "client_secret" {
+  application_object_id = azuread_application.application.object_id
 }
