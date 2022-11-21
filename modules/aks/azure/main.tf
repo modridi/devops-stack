@@ -131,7 +131,7 @@ module "argocd" {
   extra_application_sets  = var.extra_application_sets
   cluster_name            = var.cluster_name
   base_domain             = local.base_domain
-  cluster_issuer          = "letsencrypt-prod"
+  cluster_issuer          = "letsencrypt-staging"
   argocd_server_secretkey = var.argocd_server_secretkey
   wait_for_app_of_apps    = var.wait_for_app_of_apps
   metrics_archives        = var.metrics_archives
