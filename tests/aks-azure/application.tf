@@ -1,17 +1,5 @@
-locals {
-  oidc = {
-    issuer_url              = format("https://login.microsoftonline.com/%s/v2.0", data.azurerm_client_config.current.tenant_id)
-    oauth_url               = format("https://login.microsoftonline.com/%s/oauth2/authorize", data.azurerm_client_config.current.tenant_id)
-    token_url               = format("https://login.microsoftonline.com/%s/oauth2/token", data.azurerm_client_config.current.tenant_id)
-    api_url                 = format("https://graph.microsoft.com/oidc/userinfo")
-    client_id               = azuread_application.application.application_id
-    client_secret           = azuread_application_password.client_secret.value
-    oauth2_proxy_extra_args = []
-  }
-}
-
-resource "azuread_application" "application" {
-  display_name = var.platform_name
+resource "azuread_application" "oauth2_apps" {
+  display_name = format("oauth2-apps-dstack-%s", var.cluster_name)
 
   required_resource_access {
     resource_app_id = "00000003-0000-0000-c000-000000000000"
@@ -37,10 +25,10 @@ resource "azuread_application" "application" {
 
   web {
     redirect_uris = [
-      format("https://argocd.apps.%s.%s/auth/callback", var.cluster_name, azurerm_dns_zone.default.name),
-      format("https://grafana.apps.%s.%s/login/generic_oauth", var.cluster_name, azurerm_dns_zone.default.name),
-      format("https://prometheus.apps.%s.%s/oauth2/callback", var.cluster_name, azurerm_dns_zone.default.name),
-      format("https://alertmanager.apps.%s.%s/oauth2/callback", var.cluster_name, azurerm_dns_zone.default.name),
+      format("https://argocd.apps.%s.%s/auth/callback", var.cluster_name, var.dns_zone.name),
+      format("https://grafana.apps.%s.%s/login/generic_oauth", var.cluster_name, var.dns_zone.name),
+      format("https://prometheus.apps.%s.%s/oauth2/callback", var.cluster_name, var.dns_zone.name),
+      format("https://alertmanager.apps.%s.%s/oauth2/callback", var.cluster_name, var.dns_zone.name),
     ]
 
     implicit_grant {
@@ -76,6 +64,6 @@ resource "random_uuid" "argocd_app_role_admin" {
 resource "random_uuid" "argocd_app_role_user" {
 }
 
-resource "azuread_application_password" "client_secret" {
-  application_object_id = azuread_application.application.object_id
+resource "azuread_application_password" "oauth2_apps" {
+  application_object_id = azuread_application.oauth2_apps.object_id
 }

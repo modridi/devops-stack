@@ -1,15 +1,25 @@
-variable "platform_name" {
-  type    = string
-  default = "platform-x"
-}
+# Requirements:
+# * Subscription
+# * DNS zone + already set up delegation if domain is registered elsewhere
+# * Storage account + container for state file
+# * Azure AD user with the following roles:
+# ** Azure AD application administrator role
+# ** Azure RM subscription contributor
+# ** Azure RM storage account contributor role (refine)
+
 
 variable "dns_zone" {
-  type    = string
-  default = "is-internal.camptocamp.com"
+  type = object({
+    name           = string
+    resource_group = string
+  })
+  default = {
+    name           = "is-internal.camptocamp.com"
+    resource_group = "default"
+  }
 }
 
-variable "default_rg_location" {
-  description = "Location of default resource group"
-  type        = string
-  default     = "Switzerland North"
+variable "cluster_name" {
+  type    = string
+  default = "blue"
 }

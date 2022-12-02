@@ -1,17 +1,14 @@
 terraform {
-  # backend "azurerm" {
-  #   resource_group_name  = "terraform-pipeline"
-  #   storage_account_name = "c2ctfpipelinewhzhyptv"
-  #   container_name       = "terraform-state"
-  #   key                  = "tfstate"
-
-  #   use_azuread_auth = true
-  # }
+  backend "azurerm" {
+    resource_group_name  = "devops-stack-v1"
+    storage_account_name = "devopsstackv1state"
+    container_name       = "statefile"
+    key                  = "tfstate"
+  }
 
   required_providers {
     azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "<= 2.78.0"
+      source = "hashicorp/azurerm"
     }
     azuread = {
       source = "hashicorp/azuread"
@@ -36,5 +33,5 @@ terraform {
     }
   }
 
-  required_version = ">= 0.13.0"
+  required_version = ">= 1.2.0"
 }

@@ -1,12 +1,7 @@
-resource "azurerm_dns_zone" "default" {
-  name                = format("%s.%s", var.platform_name, var.domain)
-  resource_group_name = azurerm_resource_group.default.name
-}
-
 resource "azurerm_dns_cname_record" "wildcard" {
   name                = "*.apps"
-  zone_name           = azurerm_dns_zone.default.name
-  resource_group_name = azurerm_resource_group.default.name
+  zone_name           = var.dns_zone.name
+  resource_group_name = var.dns_zone.resource_group
   ttl                 = 300
-  record              = format("%s-%s.%s.cloudapp.azure.com.", var.platform_name, replace(azurerm_dns_zone.default.name, ".", "-"), azurerm_resource_group.default.location)
+  record              = format("%s-%s.%s.cloudapp.azure.com.", var.cluster_name, replace(var.dns_zone.name, ".", "-"), azurerm_resource_group.default.location)
 }
