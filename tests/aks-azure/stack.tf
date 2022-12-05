@@ -107,6 +107,21 @@
 #   prometheus = {
 #     oidc = local.oidc
 #   }
+#   grafana = {
+#     additional_data_sources = true
+#   }
+
+#   ## TODO missing Thanos object storage configuration section in module kube-prometheus-stack
+#   metrics_archives = {
+#     bucket_config = {
+#       type = "AZURE"
+#       config = {
+#         storage_account     = azurerm_storage_account.metrics.name
+#         storage_account_key = azurerm_storage_account.metrics.primary_access_key
+#         container           = azurerm_storage_container.metrics.name
+#       }
+#     }
+#   }
 # }
 
 # module "argocd_final" {
@@ -156,7 +171,24 @@
 #   }
 # }
 
-# module "thanos" {}
+# module "thanos" {
+#   source = "git::https://github.com/camptocamp/devops-stack-module-thanos.git//aks?ref=bucket_credentials_v2"
+
+#   base_domain      = var.dns_zone.name
+#   cluster_name     = var.cluster_name
+#   argocd_namespace = module.argocd.argocd_namespace
+#   cluster_issuer   = "letsencrypt-staging"
+
+#   metrics_storage = {
+#     container_name       = azurerm_storage_container.metrics.name
+#     storage_account_name = azurerm_storage_account.metrics.name
+#     storage_account_key  = azurerm_storage_account.metrics.primary_access_key
+#   }
+
+#   thanos = {
+#     oidc = local.oidc
+#   }
+# }
 
 # module "csi-secrets-store-provider-azure" {
 #   source = "git::https://github.com/camptocamp/devops-stack-module-csi-secrets-store-provider-azure.git"
