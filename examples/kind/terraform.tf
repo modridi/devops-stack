@@ -16,5 +16,9 @@ terraform {
       source  = "mrparkers/keycloak"
       version = "~> 4"
     }
+    kind = {
+      source  = "tehcyx/kind"
+      version = "~> 0.1.0"
+    }
   }
 }

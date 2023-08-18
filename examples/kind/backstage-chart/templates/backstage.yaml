@@ -1,0 +1,85 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: registrypullsecret
+data:
+  .dockerconfigjson: {{ .Values.backstage.imagePullSecret }}
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backstage-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backstage
+  template:
+    metadata:
+      labels:
+        app: backstage
+    spec:
+      imagePullSecrets:
+      - name: registrypullsecret
+      containers:
+      - name: backstage
+        image: {{ .Values.backstage.image }}:{{ .Values.backstage.tag }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 7007
+        volumeMounts:
+          - name: backstage-config
+            mountPath: /app/app-config.yaml
+            subPath: app-config.yaml
+      volumes:
+        - name: backstage-config
+          configMap:
+            name: backstage-app-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backstage-app-config
+data:
+  app-config.yaml: |
+{{ .Values.backstage.config | indent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backstage-svc
+spec:
+  selector:
+    app: backstage
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: backstage-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: {{ .Values.backstage.ingress.clusterIssuer }}
+    traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  rules:
+  - host: {{ .Values.backstage.ingress.host }}
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: backstage-svc
+            port:
+              number: 80
+  tls:
+  - hosts:
+      - {{ .Values.backstage.ingress.host }}
+    secretName: backstage-tls

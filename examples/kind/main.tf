@@ -75,6 +75,17 @@ module "traefik" {
 
   enable_service_monitor = local.enable_service_monitor
 
+  helm_values = [{
+    traefik = {
+      additionalArguments = [
+        "--serversTransport.insecureSkipVerify=true",
+        "--entrypoints.web.http.redirections.entryPoint.to=:443",
+        "--entrypoints.web.http.redirections.entryPoint.scheme=https",
+        "--entryPoints.postgresql.address=:5432/tcp"
+      ]
+    }
+  }]
+
   dependency_ids = {
     argocd = module.argocd_bootstrap.id
   }
@@ -139,54 +150,6 @@ module "minio" {
   }
 }
 
-module "loki-stack" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-loki-stack//kind?ref=v4.0.2"
-
-  cluster_name     = local.cluster_name
-  base_domain      = local.base_domain
-  argocd_namespace = module.argocd_bootstrap.argocd_namespace
-
-  distributed_mode = true
-
-  logs_storage = {
-    bucket_name       = local.minio_config.buckets.0.name
-    endpoint          = module.minio.endpoint
-    access_key        = local.minio_config.users.0.accessKey
-    secret_access_key = local.minio_config.users.0.secretKey
-  }
-
-  dependency_ids = {
-    minio = module.minio.id
-  }
-}
-
-module "thanos" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-thanos//kind?ref=v2.0.1"
-
-  cluster_name     = local.cluster_name
-  base_domain      = local.base_domain
-  cluster_issuer   = local.cluster_issuer
-  argocd_namespace = module.argocd_bootstrap.argocd_namespace
-
-  metrics_storage = {
-    bucket_name       = local.minio_config.buckets.1.name
-    endpoint          = module.minio.endpoint
-    access_key        = local.minio_config.users.1.accessKey
-    secret_access_key = local.minio_config.users.1.secretKey
-  }
-
-  thanos = {
-    oidc = module.oidc.oidc
-  }
-
-  dependency_ids = {
-    traefik      = module.traefik.id
-    cert-manager = module.cert-manager.id
-    minio        = module.minio.id
-    oidc         = module.oidc.id
-  }
-}
-
 module "kube-prometheus-stack" {
   source = "git::https://github.com/camptocamp/devops-stack-module-kube-prometheus-stack//kind?ref=v6.0.1"
 
@@ -195,12 +158,12 @@ module "kube-prometheus-stack" {
   cluster_issuer   = local.cluster_issuer
   argocd_namespace = module.argocd_bootstrap.argocd_namespace
 
-  metrics_storage = {
-    bucket     = local.minio_config.buckets.1.name
-    endpoint   = module.minio.endpoint
-    access_key = local.minio_config.users.1.accessKey
-    secret_key = local.minio_config.users.1.secretKey
-  }
+  # metrics_storage = {
+  #   bucket     = local.minio_config.buckets.1.name
+  #   endpoint   = module.minio.endpoint
+  #   access_key = local.minio_config.users.1.accessKey
+  #   secret_key = local.minio_config.users.1.secretKey
+  # }
 
   prometheus = {
     oidc = module.oidc.oidc
@@ -247,26 +210,15 @@ module "argocd" {
     oidc                  = module.oidc.id
     kube-prometheus-stack = module.kube-prometheus-stack.id
   }
-}
 
-module "metrics_server" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-application.git?ref=v2.0.1"
-
-  name             = "metrics-server"
-  argocd_namespace = module.argocd_bootstrap.argocd_namespace
-
-  source_repo            = "https://github.com/kubernetes-sigs/metrics-server.git"
-  source_repo_path       = "charts/metrics-server"
-  source_target_revision = "metrics-server-helm-chart-3.8.3"
-  destination_namespace  = "kube-system"
-
+  # Temporary workaround: redirection to login page after OIDC login attempt
   helm_values = [{
-    args = [
-      "--kubelet-insecure-tls" # Ignore self-signed certificates of the KinD cluster
-    ]
+    argo-cd = {
+      server = {
+        config = {
+          "admin.enabled" = "true"
+        }
+      }
+    }
   }]
-
-  dependency_ids = {
-    argocd = module.argocd.id
-  }
 }
