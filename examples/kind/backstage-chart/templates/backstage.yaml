@@ -83,3 +83,25 @@ spec:
   - hosts:
       - {{ .Values.backstage.ingress.host }}
     secretName: backstage-tls
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argocd-app-manager
+rules:
+- apiGroups: ["argoproj.io"]
+  resources: ["applications"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: backstage-argocd-app-manager
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: backstage
+roleRef:
+  kind: ClusterRole
+  name: argocd-app-manager
+  apiGroup: rbac.authorization.k8s.io

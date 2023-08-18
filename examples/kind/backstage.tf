@@ -7,7 +7,7 @@ locals {
     }
     backstage = {
       image = "ghcr.io/modridi/backstage"
-      tag   = "0.1.0"
+      tag   = "0.2.0"
       imagePullSecret = base64encode(jsonencode(
         {
           "auths" = {
@@ -82,6 +82,10 @@ catalog:
       rules:
         - allow: [Template]
     - type: url
+      target: https://github.com/modridi/cloud-native-heroku/blob/demo/templates/03-argocd/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
       target: https://github.com/modridi/demo-backstage/blob/main/examples/org.yaml
       rules:
         - allow: [User, Group]
@@ -101,4 +105,8 @@ resource "helm_release" "backstage" {
   namespace        = "backstage"
   create_namespace = true
   values           = [yamlencode(local.backstage_values)]
+
+  depends_on = [
+    module.argocd
+  ]
 }
