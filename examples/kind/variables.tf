@@ -1,5 +1,6 @@
 variable "gh_username" {
-  type = string
+  type    = string
+  default = "modridi"
 }
 
 variable "gh_token" {

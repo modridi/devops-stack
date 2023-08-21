@@ -19,7 +19,7 @@ locals {
       ))
       ingress = {
         clusterIssuer = "ca-issuer"
-        host = "backstage.apps.${local.cluster_name}.${local.base_domain}"
+        host          = "backstage.apps.${local.cluster_name}.${local.base_domain}"
       }
       config = <<-EOT
 app:
@@ -99,6 +99,80 @@ resource "random_password" "backstage_db_password" {
   special = false
 }
 
+resource "helm_release" "crossplane" {
+  name             = "crossplane"
+  chart            = "crossplane"
+  repository       = "https://charts.crossplane.io/stable"
+  namespace        = "crossplane-system"
+  create_namespace = true
+
+  depends_on = [
+    module.argocd
+  ]
+}
+
+resource "kubernetes_manifest" "crossplane_aws_provider" {
+  manifest = yamldecode(
+    <<EOT
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-aws-s3
+spec:
+  package: xpkg.upbound.io/upbound/provider-aws-s3:v0.37.0
+    EOT
+  )
+
+  depends_on = [
+    helm_release.crossplane
+  ]
+}
+
+# resource "kubernetes_secret_v1" "aws_secret" {
+#   metadata {
+#     name      = "aws-secret"
+#     namespace = "crossplane-system"
+#   }
+
+#   data = {
+#     creds = <<EOT
+# [default]
+# aws_access_key_id = 
+# aws_secret_access_key = 
+#     EOT
+#   }
+
+#   depends_on = [
+#     kubernetes_manifest.crossplane_aws_provider
+#   ]
+# }
+
+# resource "kubernetes_manifest" "crossplane_aws_provider_config" {
+#   manifest = yamldecode(
+#     <<EOT
+# apiVersion: aws.upbound.io/v1beta1
+# kind: ProviderConfig
+# metadata:
+#   name: default
+# spec:
+#   credentials:
+#     source: Secret
+#     secretRef:
+#       namespace: crossplane-system
+#       name: aws-secret
+#       key: creds
+#   endpoint:
+#     url:
+#       static: "http://${module.minio.endpoint}"
+#       type: Static
+#     EOT
+#   )
+
+#   depends_on = [
+#     kubernetes_secret_v1.aws_secret
+#   ]
+# }
+
 resource "helm_release" "backstage" {
   name             = "backstage"
   chart            = "${path.module}/backstage-chart"
@@ -107,6 +181,6 @@ resource "helm_release" "backstage" {
   values           = [yamlencode(local.backstage_values)]
 
   depends_on = [
-    module.argocd
+    helm_release.crossplane
   ]
 }

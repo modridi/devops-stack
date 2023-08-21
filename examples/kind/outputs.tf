@@ -15,3 +15,8 @@ output "keycloak_users" {
   value       = module.oidc.devops_stack_users_passwords
   sensitive   = true
 }
+
+output "minio_root_user_credentials" {
+  value     = module.minio.minio_root_user_credentials
+  sensitive = true
+}
