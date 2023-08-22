@@ -119,7 +119,7 @@ kind: Provider
 metadata:
   name: provider-aws-s3
 spec:
-  package: xpkg.upbound.io/upbound/provider-aws-s3:v0.37.0
+  package: xpkg.upbound.io/upbound/provider-aws-s3:v0.38.0
     EOT
   )
 
@@ -128,50 +128,56 @@ spec:
   ]
 }
 
-# resource "kubernetes_secret_v1" "aws_secret" {
-#   metadata {
-#     name      = "aws-secret"
-#     namespace = "crossplane-system"
-#   }
+resource "kubernetes_secret_v1" "aws_secret" {
+  metadata {
+    name      = "aws-secret"
+    namespace = "crossplane-system"
+  }
 
-#   data = {
-#     creds = <<EOT
-# [default]
-# aws_access_key_id = 
-# aws_secret_access_key = 
-#     EOT
-#   }
+  data = {
+    creds = <<EOT
+[default]
+aws_access_key_id = ${module.minio.minio_root_user_credentials.username}
+aws_secret_access_key = ${module.minio.minio_root_user_credentials.password}
+    EOT
+  }
 
-#   depends_on = [
-#     kubernetes_manifest.crossplane_aws_provider
-#   ]
-# }
+  depends_on = [
+    kubernetes_manifest.crossplane_aws_provider
+  ]
+}
 
-# resource "kubernetes_manifest" "crossplane_aws_provider_config" {
-#   manifest = yamldecode(
-#     <<EOT
-# apiVersion: aws.upbound.io/v1beta1
-# kind: ProviderConfig
-# metadata:
-#   name: default
-# spec:
-#   credentials:
-#     source: Secret
-#     secretRef:
-#       namespace: crossplane-system
-#       name: aws-secret
-#       key: creds
-#   endpoint:
-#     url:
-#       static: "http://${module.minio.endpoint}"
-#       type: Static
-#     EOT
-#   )
+resource "kubernetes_manifest" "crossplane_aws_provider_config" {
+  manifest = yamldecode(
+    <<EOT
+apiVersion: aws.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: aws-secret
+      key: creds
+  endpoint:
+    services:
+    - s3
+    url:
+      static: "http://${module.minio.endpoint}"
+      type: Static
+  s3_use_path_style: true
+  skip_credentials_validation: true
+  skip_metadata_api_check: true
+  skip_requesting_account_id: true
+    EOT
+  )
 
-#   depends_on = [
-#     kubernetes_secret_v1.aws_secret
-#   ]
-# }
+  depends_on = [
+    kubernetes_secret_v1.aws_secret
+  ]
+}
 
 resource "helm_release" "backstage" {
   name             = "backstage"
