@@ -47,6 +47,11 @@ locals {
         accessKey = "thanos-user"
         secretKey = random_password.thanos_secretkey.result
         policy    = "thanos-policy"
+      },
+      {
+        accessKey = "read-write-user"
+        secretKey = "backstage@c2c"
+        policy    = "readwrite"
       }
     ],
     buckets = [

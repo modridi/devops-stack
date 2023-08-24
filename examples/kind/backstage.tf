@@ -86,6 +86,10 @@ catalog:
       rules:
         - allow: [Template]
     - type: url
+      target: https://github.com/modridi/cloud-native-heroku/blob/demo/templates/04-crossplane/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
       target: https://github.com/modridi/demo-backstage/blob/main/examples/org.yaml
       rules:
         - allow: [User, Group]
@@ -111,17 +115,23 @@ resource "helm_release" "crossplane" {
   ]
 }
 
-resource "kubernetes_manifest" "crossplane_aws_provider" {
-  manifest = yamldecode(
-    <<EOT
+# https://medium.com/@danieljimgarcia/dont-use-the-terraform-kubernetes-manifest-resource-6c7ff4fe629a
+provider "kubectl" {
+  host                   = module.kind.parsed_kubeconfig.host
+  client_certificate     = module.kind.parsed_kubeconfig.client_certificate
+  client_key             = module.kind.parsed_kubeconfig.client_key
+  cluster_ca_certificate = module.kind.parsed_kubeconfig.cluster_ca_certificate
+}
+
+resource "kubectl_manifest" "crossplane_aws_provider" {
+  yaml_body = <<-EOF
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
 metadata:
   name: provider-aws-s3
 spec:
   package: xpkg.upbound.io/upbound/provider-aws-s3:v0.38.0
-    EOT
-  )
+  EOF
 
   depends_on = [
     helm_release.crossplane
@@ -143,13 +153,12 @@ aws_secret_access_key = ${module.minio.minio_root_user_credentials.password}
   }
 
   depends_on = [
-    kubernetes_manifest.crossplane_aws_provider
+    kubectl_manifest.crossplane_aws_provider
   ]
 }
 
-resource "kubernetes_manifest" "crossplane_aws_provider_config" {
-  manifest = yamldecode(
-    <<EOT
+resource "kubectl_manifest" "crossplane_aws_provider_config" {
+  yaml_body = <<EOT
 apiVersion: aws.upbound.io/v1beta1
 kind: ProviderConfig
 metadata:
@@ -171,8 +180,7 @@ spec:
   skip_credentials_validation: true
   skip_metadata_api_check: true
   skip_requesting_account_id: true
-    EOT
-  )
+  EOT
 
   depends_on = [
     kubernetes_secret_v1.aws_secret
