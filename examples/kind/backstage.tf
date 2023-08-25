@@ -7,7 +7,7 @@ locals {
     }
     backstage = {
       image = "ghcr.io/modridi/backstage"
-      tag   = "0.2.0"
+      tag   = "0.3.0"
       imagePullSecret = base64encode(jsonencode(
         {
           "auths" = {
@@ -17,6 +17,12 @@ locals {
           }
         }
       ))
+      env = [
+        {
+          name = "ARGOCD_AUTH_TOKEN"
+          value = "argocd.token=${module.argocd_bootstrap.argocd_auth_token}"
+        }
+      ]
       ingress = {
         clusterIssuer = "ca-issuer"
         host          = "backstage.apps.${local.cluster_name}.${local.base_domain}"
@@ -53,6 +59,11 @@ integrations:
       token: ${var.gh_token}
 
 proxy:
+  '/argocd/api':
+    target: http://argocd-server.argocd/api/v1/
+    headers:
+      Cookie:
+        $env: ARGOCD_AUTH_TOKEN
 
 techdocs:
   builder: 'local' # Alternatives - 'external'

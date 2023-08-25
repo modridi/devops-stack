@@ -30,6 +30,10 @@ spec:
         ports:
         - name: http
           containerPort: 7007
+      {{- with .Values.backstage.env }}
+        env:
+          {{- toYaml . | nindent 10 }}
+      {{- end }}
         volumeMounts:
           - name: backstage-config
             mountPath: /app/app-config.yaml
