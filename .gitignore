@@ -21,3 +21,5 @@ examples/*/.terraform.tfstate.lock.info
 examples/*/*-config
 examples/*/.terraform.lock.hcl
 docs_test
+examples/kind/grafana_sa_token.json
+examples/kind/grafana_sa.json

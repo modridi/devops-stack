@@ -7,7 +7,7 @@ locals {
     }
     backstage = {
       image = "ghcr.io/modridi/backstage"
-      tag   = "0.3.0"
+      tag   = "0.5.0"
       imagePullSecret = base64encode(jsonencode(
         {
           "auths" = {
@@ -19,7 +19,7 @@ locals {
       ))
       env = [
         {
-          name = "ARGOCD_AUTH_TOKEN"
+          name  = "ARGOCD_AUTH_TOKEN"
           value = "argocd.token=${module.argocd_bootstrap.argocd_auth_token}"
         }
       ]
@@ -64,6 +64,16 @@ proxy:
     headers:
       Cookie:
         $env: ARGOCD_AUTH_TOKEN
+  '/grafana/api':
+    target: http://kube-prometheus-stack-grafana.kube-prometheus-stack
+    headers:
+      Authorization: Bearer ${jsondecode(data.local_file.grafana_sa_token.content).key}
+  '/prometheus/api':
+    target: http://kube-prometheus-stack-prometheus.kube-prometheus-stack:9090/api/v1/
+
+grafana:
+  domain: https://grafana.apps.${local.cluster_name}.${local.base_domain}
+  unifiedAlerting: false
 
 techdocs:
   builder: 'local' # Alternatives - 'external'
@@ -207,5 +217,62 @@ resource "helm_release" "backstage" {
 
   depends_on = [
     helm_release.crossplane
+  ]
+}
+
+# Ok, this sucks! Reason: couldn't create the service account with Grafana provider and didn't want to spend much time on this now.
+# TODO: replace code between the following with something clean.
+
+resource "null_resource" "create_grafana_backstage_service_account" {
+  provisioner "local-exec" {
+    command = <<EOT
+      curl -k --header "Content-Type: application/json" \
+        --request POST \
+        --data '{"name":"backstage","role":"Admin"}' \
+        https://admin:${module.kube-prometheus-stack.grafana_admin_password}@grafana.apps.${local.cluster_name}.${local.base_domain}/api/serviceaccounts > grafana_sa.json
+    EOT
+  }
+
+  depends_on = [
+    module.argocd
+  ]
+
+  lifecycle {
+    ignore_changes = all
+  }
+}
+
+data "local_file" "grafana_sa" {
+  filename = "${path.module}/grafana_sa.json"
+
+  depends_on = [
+    null_resource.create_grafana_backstage_service_account
+  ]
+}
+
+resource "null_resource" "create_grafana_backstage_service_account_token" {
+  provisioner "local-exec" {
+    command = <<EOT
+      curl -k --header "Content-Type: application/json" \
+        --request POST \
+        --data '{"name":"backstage"}' \
+        https://admin:${module.kube-prometheus-stack.grafana_admin_password}@grafana.apps.${local.cluster_name}.${local.base_domain}/api/serviceaccounts/${jsondecode(data.local_file.grafana_sa.content).id}/tokens > grafana_sa_token.json
+    EOT
+  }
+
+  depends_on = [
+    null_resource.create_grafana_backstage_service_account
+  ]
+
+  lifecycle {
+    ignore_changes = all
+  }
+}
+
+data "local_file" "grafana_sa_token" {
+  filename = "${path.module}/grafana_sa_token.json"
+
+  depends_on = [
+    null_resource.create_grafana_backstage_service_account_token
   ]
 }

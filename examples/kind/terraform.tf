@@ -24,5 +24,13 @@ terraform {
       source  = "gavinbunney/kubectl"
       version = "~> 1"
     }
+    null = {
+      source  = "hashicorp/null"
+      version = ">= 3"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = ">= 2"
+    }
   }
 }

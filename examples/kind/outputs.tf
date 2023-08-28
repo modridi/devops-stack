@@ -20,3 +20,8 @@ output "minio_root_user_credentials" {
   value     = module.minio.minio_root_user_credentials
   sensitive = true
 }
+
+output "grafana_admin_password" {
+  value     = module.kube-prometheus-stack.grafana_admin_password
+  sensitive = true
+}
