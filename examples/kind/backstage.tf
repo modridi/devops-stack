@@ -7,7 +7,7 @@ locals {
     }
     backstage = {
       image = "ghcr.io/modridi/backstage"
-      tag   = "0.5.0"
+      tag   = "0.8.0"
       imagePullSecret = base64encode(jsonencode(
         {
           "auths" = {
@@ -33,7 +33,7 @@ app:
   baseUrl: https://backstage.apps.${local.cluster_name}.${local.base_domain}
 
 organization:
-  name: CampToCamp
+  name: camptocamp
 
 backend:
   baseUrl: https://backstage.apps.${local.cluster_name}.${local.base_domain}
@@ -83,7 +83,12 @@ techdocs:
     type: 'local' # Alternatives - 'googleGcs' or 'awsS3'. Read documentation for using alternatives.
 
 auth:
-  providers: {}
+  environment: development
+  providers:
+    github:
+      development:
+        clientId: <clien_id>
+        clientSecret: <client_secret>
 
 scaffolder:
 
@@ -96,14 +101,6 @@ catalog:
   locations:
     - type: url
       target: https://github.com/modridi/cloud-native-heroku/blob/demo/templates/01-hello-world/template.yaml
-      rules:
-        - allow: [Template]
-    - type: url
-      target: https://github.com/modridi/cloud-native-heroku/blob/demo/templates/02-image-and-chart/template.yaml
-      rules:
-        - allow: [Template]
-    - type: url
-      target: https://github.com/modridi/cloud-native-heroku/blob/demo/templates/03-argocd/template.yaml
       rules:
         - allow: [Template]
     - type: url
@@ -202,6 +199,8 @@ spec:
   skip_metadata_api_check: true
   skip_requesting_account_id: true
   EOT
+
+  wait_for_rollout = true
 
   depends_on = [
     kubernetes_secret_v1.aws_secret

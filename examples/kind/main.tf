@@ -75,17 +75,6 @@ module "traefik" {
 
   enable_service_monitor = local.enable_service_monitor
 
-  helm_values = [{
-    traefik = {
-      additionalArguments = [
-        "--serversTransport.insecureSkipVerify=true",
-        "--entrypoints.web.http.redirections.entryPoint.to=:443",
-        "--entrypoints.web.http.redirections.entryPoint.scheme=https",
-        "--entryPoints.postgresql.address=:5432/tcp"
-      ]
-    }
-  }]
-
   dependency_ids = {
     argocd = module.argocd_bootstrap.id
   }
